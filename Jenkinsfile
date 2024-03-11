@@ -31,6 +31,15 @@ pipeline {
     agent any
       stages {
         stage('SCANOSS') {
+            when {
+                expression {
+                    // Only run the pipeline if commits are done on the main branch
+                    def payload = readJSON text: "${env.payload}"
+
+                    // The payload.ref is checked to ensure it is the main branch.  The payload.commits.size() is used to verify that there are commits associated with the push event.
+                    return payload.ref == 'refs/heads/main' && payload.commits.size() > 0
+                }
+            }
 
          agent {
             docker {
@@ -44,8 +53,9 @@ pipeline {
         }
           steps {
 
-                /****** Checkout repository ****/
+                echo "PAYLOAD ${env.payload}"
 
+                /****** Checkout repository ****/
                 script {
                     dir('repository') {
                         git branch: 'main',
