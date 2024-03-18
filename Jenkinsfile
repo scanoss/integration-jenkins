@@ -36,8 +36,11 @@ pipeline {
                     // Only run the pipeline if commits are done on the main branch
                     def payload = readJSON text: "${env.payload}"
 
-                    // The payload.ref is checked to ensure it is the main branch.  The payload.commits.size() is used to verify that there are commits associated with the push event.
-                    return payload.ref == 'refs/heads/main' && payload.commits.size() > 0
+                    // Check if the event is a push event to the main branch
+                    def isPushToMainBranch = env.BRANCH_NAME == 'main' && env.CHANGE_ID != null
+
+                    // The payload.commits.size() is used to verify that there are commits associated with the push event.
+                    return isPushToMainBranch && payload.commits.size() > 0
                 }
             }
 
