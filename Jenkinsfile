@@ -35,7 +35,7 @@ pipeline {
                 expression {
                      def payload = readJSON text: "${env.payload}"
 
-                     return payload.ref == 'refs/heads/main'
+                     return payload.pull_request !=  null && payload.pull_request.base.ref == 'main' && payload.action == 'closed'
                 }
             }
 
