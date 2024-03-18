@@ -87,9 +87,6 @@ pipeline {
 
                                     if ((params.CREATE_JIRA_ISSUE == true) &&  (env.check_result != '0')) {
 
-                                        //TODO: Should we move to SCANOSS-PY CLI?
-                                        sh 'apt update && apt install curl -y'
-
 
                                         echo "JIRA issue parameter value: ${params.CREATE_JIRA_ISSUE}"
 
@@ -134,11 +131,6 @@ def publishReport() {
 
 def copyleft() {
     try {
-
-
-    	  // TODO: Remove this when SCANOSS-PY new image be packaged
-          sh 'apt update && apt install jq -y'
-
           sh 'echo "component,name,copyleft" > data.csv'
           sh ''' jq -r 'reduce .[]?[] as $item ({}; select($item.purl) | .[$item.purl[0] + "@" + $item.version] += [$item.licenses[]? | select(.copyleft == "yes") | .name]) | to_entries[] | select(.value | unique | length > 0) | [.key, .key, (.value | unique | length)] | @csv' scanoss-results.json >> data.csv'''
 
