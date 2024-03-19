@@ -116,7 +116,6 @@ pipeline {
     }
 }
 
-
 def publishReport() {
      publishReport name: "Scan Results", displayType: "dual", provider: csv(id: "report-summary", pattern: "data.csv")
 }
