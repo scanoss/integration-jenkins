@@ -2,6 +2,9 @@
   "components": [
     {
       "purl": "pkg:github/scanoss/scanoss.js"
+    },
+    {
+      "purl": "pkg:github/scanoss/engine"
     }
   ]
 }
