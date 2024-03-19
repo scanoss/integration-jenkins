@@ -34,7 +34,7 @@ pipeline {
                 expression {
                      def payload = readJSON text: "${env.payload}"
 
-                     return payload.pull_request !=  null && payload.pull_request.base.ref == 'main' && payload.action == 'closed'
+                     return payload.pull_request !=  null && payload.pull_request.base.ref == 'main' && payload.action == 'opened'
                 }
             }
 
@@ -50,9 +50,7 @@ pipeline {
         }
           steps {
 
-                echo "PAYLOAD ${env.payload}"
-
-                /****** Checkout repository ****/
+               /****** Checkout repository ****/
                 script {
                     dir('repository') {
                         git branch: 'main',
@@ -112,14 +110,11 @@ pipeline {
                                 }
                             }
 
-
-
                 }
             }
         }
     }
 }
-
 
 
 def publishReport() {
