@@ -48,10 +48,13 @@ pipeline {
                 reuseNode true
             }
         }
-          steps {
-
-               /****** Checkout repository ****/
+          steps {               
                 script {
+
+                     env.SCANOSS_RESOURCE_PATH = "scan_reports/scanoss_${currentBuild.number}"
+                     sh "mkdir -p ${env.SCANOSS_RESOURCE_PATH}"
+
+                    /****** Checkout repository ****/
                     dir('repository') {
                         git branch: 'main',
                             credentialsId: params.GITHUB_TOKEN_ID,
@@ -118,17 +121,20 @@ pipeline {
 
 
 def publishReport() {
-     publishReport name: "Scan Results", displayType: "dual", provider: csv(id: "report-summary", pattern: "data.csv")
+     publishReport name: "Scan Results", displayType: "dual", provider: csv(id: "report-summary", pattern: "${env.SCANOSS_RESOURCE_PATH}/data.csv")
 }
 
 def copyleft() {
     try {
 
-          sh 'echo "component,name,copyleft" > data.csv'
-          sh ''' jq -r 'reduce .[]?[] as $item ({}; select($item.purl) | .[$item.purl[0] + "@" + $item.version] += [$item.licenses[]? | select(.copyleft == "yes") | .name]) | to_entries[] | select(.value | unique | length > 0) | [.key, .key, (.value | unique | length)] | @csv' scanoss-results.json >> data.csv'''
+         def check_result = sh (returnStdout: true, script: '''
+            echo 'component,name,copyleft' > $SCANOSS_RESOURCE_PATH/data.csv
 
-          env.check_result = sh(script: 'result=$(if [ $(wc -l < data.csv) -gt 1 ]; then echo "1"; else echo "0"; fi); echo $result', returnStdout: true).trim()
-          sh 'echo CHECK RESULT: ${check_result}'
+            jq -r 'reduce .[]?[] as \$item ({}; select(\$item.purl) | .[\$item.purl[0] + \"@\" + \$item.version] += [\$item.licenses[]? | select(.copyleft == \"yes\") | .name]) | to_entries[] | select(.value | unique | length > 0) | [.key, .key, (.value | unique | length)] | @csv' $SCANOSS_RESOURCE_PATH/scanoss-results.json >> $SCANOSS_RESOURCE_PATH/data.csv
+            
+            check_result=$(if [ $(wc -l < $SCANOSS_RESOURCE_PATH/data.csv) -gt 1 ]; then echo "1"; else echo "0"; fi);
+            echo \$check_result
+         ''')
 
           if (params.ABORT_ON_POLICY_FAILURE && env.check_result != '0') {
             currentBuild.result = "FAILURE"
@@ -142,9 +148,12 @@ def copyleft() {
     }
 }
 
-def uploadArtifacts() {
-  archiveArtifacts artifacts: 'scanoss-results.json', onlyIfSuccessful: true
+
+ def uploadArtifacts() {
+  def scanossResultPath = "${env.SCANOSS_RESOURCE_PATH}/scanoss-results.json"
+  archiveArtifacts artifacts: scanossResultPath, onlyIfSuccessful: true
 }
+
 
 def scan() {
   withCredentials([string(credentialsId: params.SCANOSS_API_TOKEN_ID , variable: 'SCANOSS_API_TOKEN')]) {
@@ -165,6 +174,9 @@ def scan() {
 
 
                  scanoss-py scan $CUSTOM_URL $CUSTOM_TOKEN $SBOM_IDENTIFY $SBOM_IGNORE --output ../scanoss-results.json .
+
+                 cp ../scanoss-results.json $WORKSPACE/$SCANOSS_RESOURCE_PATH/scanoss-results.json
+
             '''
 
         }
