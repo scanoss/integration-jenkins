@@ -50,10 +50,21 @@ pipeline {
         }
           steps {               
                 script {
+                    
+                    /***** File names *****/
+                    env.SCANOSS_RESULTS_FILE_NAME = "scanoss-results.json"
+                    env.SCANOSS_COPYLEFT_FILE_NAME = "scanoss_license_data.csv"
 
-                    /****** SCANOSS Resources path ******/
+                    
+                    /****** Create Resources folder ******/
                     env.SCANOSS_RESOURCE_PATH = "scan_reports/scanoss_${currentBuild.number}"
                     sh "mkdir -p ${env.SCANOSS_RESOURCE_PATH}"
+
+                    /***** Resources Paths *****/
+                    env.COPYLEFT_RESOURCE_PATH = "${env.SCANOSS_RESOURCE_PATH}/${env.SCANOSS_COPYLEFT_FILE_NAME}"
+                    env.SCANOSS_RESULTS_PATH = "${env.SCANOSS_RESOURCE_PATH}/${SCANOSS_RESULTS_FILE_NAME}"
+
+
 
 
                     /****** Get Repository name and repo URL from payload ******/
@@ -100,7 +111,7 @@ pipeline {
                                 echo "JIRA issue parameter value: ${params.CREATE_JIRA_ISSUE}"
 
 
-                                def copyLeft = sh(script: "tail -n +2 ${SCANOSS_RESOURCE_PATH}/data.csv | cut -d',' -f1", returnStdout: true)
+                                def copyLeft = sh(script: "tail -n +2 ${COPYLEFT_RESOURCE_PATH} | cut -d',' -f1", returnStdout: true)
 
                                 copyLeft = copyLeft +  "\n${BUILD_URL}\nSource repository: ${env.REPOSITORY_URL}"
 
@@ -132,18 +143,18 @@ pipeline {
 
 
 def publishReport() {
-     publishReport name: "Scan Results", displayType: "dual", provider: csv(id: "report-summary", pattern: "${env.SCANOSS_RESOURCE_PATH}/data.csv")
+     publishReport name: "Scan Results", displayType: "dual", provider: csv(id: "report-summary", pattern: "${env.COPYLEFT_RESOURCE_PATH}")
 }
 
 def copyleft() {
     try {
 
          def check_result = sh (returnStdout: true, script: '''
-            echo 'component,name,copyleft' > $SCANOSS_RESOURCE_PATH/data.csv
+            echo 'component,name,copyleft' > $COPYLEFT_RESOURCE_PATH
 
-            jq -r 'reduce .[]?[] as \$item ({}; select(\$item.purl) | .[\$item.purl[0] + \"@\" + \$item.version] += [\$item.licenses[]? | select(.copyleft == \"yes\") | .name]) | to_entries[] | select(.value | unique | length > 0) | [.key, .key, (.value | unique | length)] | @csv' $SCANOSS_RESOURCE_PATH/scanoss-results.json >> $SCANOSS_RESOURCE_PATH/data.csv
+            jq -r 'reduce .[]?[] as \$item ({}; select(\$item.purl) | .[\$item.purl[0] + \"@\" + \$item.version] += [\$item.licenses[]? | select(.copyleft == \"yes\") | .name]) | to_entries[] | select(.value | unique | length > 0) | [.key, .key, (.value | unique | length)] | @csv' $SCANOSS_RESULTS_PATH >> $COPYLEFT_RESOURCE_PATH
             
-            check_result=$(if [ $(wc -l < $SCANOSS_RESOURCE_PATH/data.csv) -gt 1 ]; then echo "1"; else echo "0"; fi);
+            check_result=$(if [ $(wc -l < $COPYLEFT_RESOURCE_PATH) -gt 1 ]; then echo "1"; else echo "0"; fi);
             echo \$check_result
          ''')
 
@@ -161,8 +172,8 @@ def copyleft() {
 
 
  def uploadArtifacts() {
-  def scanossResultPath = "${env.SCANOSS_RESOURCE_PATH}/scanoss-results.json"
-  archiveArtifacts artifacts: scanossResultPath, onlyIfSuccessful: true
+  def scanossResultsPath = "${env.SCANOSS_RESULTS_PATH}"
+  archiveArtifacts artifacts: scanossResultsPath, onlyIfSuccessful: true
 }
 
 
@@ -184,9 +195,9 @@ def scan() {
                  if [ ! -z $SCANOSS_API_TOKEN ]; then CUSTOM_TOKEN="--key $SCANOSS_API_TOKEN" ; fi
 
 
-                 scanoss-py scan $CUSTOM_URL $CUSTOM_TOKEN $SBOM_IDENTIFY $SBOM_IGNORE --output ../scanoss-results.json .
+                 scanoss-py scan $CUSTOM_URL $CUSTOM_TOKEN $SBOM_IDENTIFY $SBOM_IGNORE --output ../$SCANOSS_RESULTS_FILE_NAME .
 
-                 cp ../scanoss-results.json $WORKSPACE/$SCANOSS_RESOURCE_PATH/scanoss-results.json
+                 cp ../$SCANOSS_RESULTS_FILE_NAME $WORKSPACE/$SCANOSS_RESOURCE_PATH/$SCANOSS_RESULTS_FILE_NAME
 
             '''
 
