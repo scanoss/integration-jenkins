@@ -51,18 +51,28 @@ pipeline {
           steps {               
                 script {
 
-                     env.SCANOSS_RESOURCE_PATH = "scan_reports/scanoss_${currentBuild.number}"
-                     sh "mkdir -p ${env.SCANOSS_RESOURCE_PATH}"
+                    /****** SCANOSS Resources path ******/
+                    env.SCANOSS_RESOURCE_PATH = "scan_reports/scanoss_${currentBuild.number}"
+                    sh "mkdir -p ${env.SCANOSS_RESOURCE_PATH}"
 
-                    /****** Checkout repository ****/
+
+                    /****** Get Repository name and repo URL from payload ******/
+                    def payloadJson = readJSON text: env.payload
+                    env.REPOSITORY_NAME = payloadJson.pull_request.base.repo.name
+                    env.REPOSITORY_URL = payloadJson.pull_request.base.repo.html_url
+
+
+                    /****** Checkout repository ******/
                     dir('repository') {
                         git branch: 'main',
                             credentialsId: params.GITHUB_TOKEN_ID,
                             url: 'https://github.com/scanoss/integrations-jenkins'
                     }
 
+
                     /***** Delta *****/
                     deltaScan()
+
 
                     /***** Scan *****/
                     env.SCAN_FOLDER = params.ENABLE_DELTA_ANALYSIS ? 'delta' : 'repository'
@@ -71,47 +81,48 @@ pipeline {
                     /***** Upload Artifacts *****/
                     uploadArtifacts()
 
+
                     /**** Analyze results for copyleft ****/
                     copyleft()
+
 
                     /***** Publish report on Jenkins dashboard *****/
                     publishReport()
 
 
                     /***** Jira issue *****/
+                    withCredentials([usernamePassword(credentialsId: params.JIRA_TOKEN_ID ,usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
+                        script {
 
-                             withCredentials([usernamePassword(credentialsId: params.JIRA_TOKEN_ID ,usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                                script {
-
-                                    if ((params.CREATE_JIRA_ISSUE == true) &&  (env.check_result != '0')) {
-
-
-                                        echo "JIRA issue parameter value: ${params.CREATE_JIRA_ISSUE}"
+                            if ((params.CREATE_JIRA_ISSUE == true) &&  (env.check_result != '0')) {
 
 
-                                        def copyLeft = sh(script: "tail -n +2 data.csv | cut -d',' -f1", returnStdout: true)
+                                echo "JIRA issue parameter value: ${params.CREATE_JIRA_ISSUE}"
 
-                                        copyLeft = copyLeft +  "\n${BUILD_URL}"
 
-                                        def JSON_PAYLOAD =  [
-                                            fields : [
-                                                project : [
-                                                    key: params.JIRA_PROJECT_KEY
-                                                ],
-                                                summary : 'Components with Copyleft licenses found',
-                                                description: copyLeft,
-                                                issuetype: [
-                                                    name: 'Bug'
-                                                ]
-                                            ]
+                                def copyLeft = sh(script: "tail -n +2 ${SCANOSS_RESOURCE_PATH}/data.csv | cut -d',' -f1", returnStdout: true)
+
+                                copyLeft = copyLeft +  "\n${BUILD_URL}\nSource repository: ${env.REPOSITORY_URL}"
+
+                                def JSON_PAYLOAD =  [
+                                    fields : [
+                                        project : [
+                                            key: params.JIRA_PROJECT_KEY
+                                        ],
+                                        summary : "Components with Copyleft licenses found at ${env.REPOSITORY_NAME}",
+                                        description: copyLeft,
+                                        issuetype: [
+                                            name: 'Bug'
                                         ]
+                                    ]
+                                ]
 
-                                        def jsonString = groovy.json.JsonOutput.toJson(JSON_PAYLOAD)
+                                def jsonString = groovy.json.JsonOutput.toJson(JSON_PAYLOAD)
 
-                                        createJiraIssue(PASSWORD, USERNAME, params.JIRA_URL, jsonString)
-                                    }
-                                }
+                                createJiraIssue(PASSWORD, USERNAME, params.JIRA_URL, jsonString)
                             }
+                        }
+                    }
 
                 }
             }
@@ -246,7 +257,6 @@ def deltaScan() {
 
 
 def createJiraIssue(jiraToken, jiraUsername, jiraAPIEndpoint, payload) {
-
 
     env.TOKEN = jiraToken
     env.USER = jiraUsername
