@@ -53,7 +53,9 @@ pipeline {
                     
                     /***** File names *****/
                     env.SCANOSS_RESULTS_FILE_NAME = "scanoss-results.json"
-                    env.SCANOSS_COPYLEFT_FILE_NAME = "scanoss_license_data.csv"
+                    env.SCANOSS_LICENSE_FILE_NAME = "scanoss_license_data.csv"
+                    env.SCANOSS_COPYLEFT_FILE_NAME = "copyleft.md"
+                   
 
                     
                     /****** Create Resources folder ******/
@@ -61,8 +63,9 @@ pipeline {
                     sh "mkdir -p ${env.SCANOSS_RESOURCE_PATH}"
 
                     /***** Resources Paths *****/
-                    env.COPYLEFT_RESOURCE_PATH = "${env.SCANOSS_RESOURCE_PATH}/${env.SCANOSS_COPYLEFT_FILE_NAME}"
+                    env.LICENSE_RESOURCE_PATH = "${env.SCANOSS_RESOURCE_PATH}/${env.SCANOSS_LICENSE_FILE_NAME}"
                     env.SCANOSS_RESULTS_PATH = "${env.SCANOSS_RESOURCE_PATH}/${SCANOSS_RESULTS_FILE_NAME}"
+                    env.COPYLEFT_RESOURCE_PATH = "${env.SCANOSS_RESOURCE_PATH}/${env.SCANOSS_COPYLEFT_FILE_NAME}"
 
 
 
@@ -111,9 +114,9 @@ pipeline {
                                 echo "JIRA issue parameter value: ${params.CREATE_JIRA_ISSUE}"
 
 
-                                def copyLeft = sh(script: "tail -n +2 ${COPYLEFT_RESOURCE_PATH} | cut -d',' -f1", returnStdout: true)
+                               def copyLeft = sh(script: "cat ${COPYLEFT_RESOURCE_PATH}", returnStdout: true)
 
-                                copyLeft = copyLeft +  "\n${BUILD_URL}\nSource repository: ${env.REPOSITORY_URL}"
+                               copyLeft = copyLeft +  "\nMore details can be found: ${BUILD_URL}\nSource repository: ${env.REPOSITORY_URL}"
 
                                 def JSON_PAYLOAD =  [
                                     fields : [
@@ -143,18 +146,24 @@ pipeline {
 
 
 def publishReport() {
-     publishReport name: "Scan Results", displayType: "dual", provider: csv(id: "report-summary", pattern: "${env.COPYLEFT_RESOURCE_PATH}")
+     publishReport name: "Scan Results", displayType: "dual", provider: csv(id: "report-summary", pattern: "${env.LICENSE_RESOURCE_PATH}")
 }
 
 def copyleft() {
     try {
 
          def check_result = sh (returnStdout: true, script: '''
-            echo 'component,name,copyleft' > $COPYLEFT_RESOURCE_PATH
+            echo 'component,name,copyleft' > $LICENSE_RESOURCE_PATH
 
-            jq -r 'reduce .[]?[] as \$item ({}; select(\$item.purl) | .[\$item.purl[0] + \"@\" + \$item.version] += [\$item.licenses[]? | select(.copyleft == \"yes\") | .name]) | to_entries[] | select(.value | unique | length > 0) | [.key, .key, (.value | unique | length)] | @csv' $SCANOSS_RESULTS_PATH >> $COPYLEFT_RESOURCE_PATH
+            jq -r 'reduce .[]?[] as \$item ({}; select(\$item.purl) | .[\$item.purl[0] + \"@\" + \$item.version] += [\$item.licenses[]? | select(.copyleft == \"yes\") | .name]) | to_entries[] | select(.value | unique | length > 0) | [.key, .key, (.value | unique | length)] | @csv' $SCANOSS_RESULTS_PATH >> $LICENSE_RESOURCE_PATH
             
-            check_result=$(if [ $(wc -l < $COPYLEFT_RESOURCE_PATH) -gt 1 ]; then echo "1"; else echo "0"; fi);
+            
+            printf '|| Component || Purl || Version || Licenses||\n' > $COPYLEFT_RESOURCE_PATH           
+
+            jq -r '[.[]?[] | select(.licenses) | select(.licenses[] | .copyleft? == \"yes\") | {component: .component, version: .version, purl: .purl[], licenses: (.licenses | map(.name) | join(\",\"))}] | unique_by(.purl) | sort_by(.component) | to_entries[] | "|\\(.value.component)|\\(.value.purl)|\\(.value.version)|\\(.value.licenses)|"'  $SCANOSS_RESULTS_PATH >> $COPYLEFT_RESOURCE_PATH 
+           
+
+            check_result=$(if [ $(wc -l < $LICENSE_RESOURCE_PATH) -gt 1 ]; then echo "1"; else echo "0"; fi);
             echo \$check_result
          ''')
 
