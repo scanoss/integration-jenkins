@@ -8,6 +8,8 @@ int binary_scan(char * input)
 	ldb_hex_to_bin(hexmd5, MD5_LEN * 2, bin_md5);
 	free(hexmd5);
 
+
+
 	uint8_t zero_md5[MD5_LEN] = {0xd4,0x1d,0x8c,0xd9,0x8f,0x00,0xb2,0x04,0xe9,0x80,0x09,0x98,0xec,0xf8,0x42,0x7e}; //empty string md5
 
 	if (!memcmp(zero_md5,bin_md5, MD5_LEN)) //the md5 key of an empty string must be skipped.
