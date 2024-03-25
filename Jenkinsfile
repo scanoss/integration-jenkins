@@ -152,7 +152,7 @@ def publishReport() {
 def copyleft() {
     try {
 
-         def check_result = sh (returnStdout: true, script: '''
+         env.check_result = sh (returnStdout: true, script: '''
             echo 'component,name,copyleft' > $LICENSE_RESOURCE_PATH
 
             jq -r 'reduce .[]?[] as \$item ({}; select(\$item.purl) | .[\$item.purl[0] + \"@\" + \$item.version] += [\$item.licenses[]? | select(.copyleft == \"yes\") | .name]) | to_entries[] | select(.value | unique | length > 0) | [.key, .key, (.value | unique | length)] | @csv' $SCANOSS_RESULTS_PATH >> $LICENSE_RESOURCE_PATH
