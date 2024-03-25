@@ -17,13 +17,13 @@ pipeline {
 
         // JIRA Variables
 
-        string(name: 'JIRA_TOKEN_ID', defaultValue:"jira-token" , description: 'Jira token id')
+        string(name: 'JIRA_TOKEN_ID', defaultValue:"jira-token" , description: 'JIRA token id')
 
-        string(name: 'JIRA_URL', defaultValue:"https://scanoss.atlassian.net/" , description: 'Jira URL')
+        string(name: 'JIRA_URL', defaultValue:"https://scanoss.atlassian.net/" , description: 'JIRA URL')
 
-        string(name: 'JIRA_PROJECT_KEY', defaultValue:"TESTPROJ" , description: 'Jira Project Key')
+        string(name: 'JIRA_PROJECT_KEY', defaultValue:"TESTPROJ" , description: 'JIRA Project Key')
 
-        booleanParam(name: 'CREATE_JIRA_ISSUE', defaultValue: true, description: 'Enable Jira reporting')
+        booleanParam(name: 'CREATE_JIRA_ISSUE', defaultValue: true, description: 'Enable JIRA reporting')
 
         booleanParam(name: 'ABORT_ON_POLICY_FAILURE', defaultValue: false, description: 'Abort Pipeline on pipeline Failure')
     }
@@ -106,10 +106,10 @@ pipeline {
                     publishReport()
 
 
-                    /***** Jira issue *****/
+                    /***** JIRA issue *****/
                     withCredentials([usernamePassword(credentialsId: params.JIRA_TOKEN_ID ,usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                         script {
-                            echo "Create Jira Ticket ${env.check_result}"
+                            echo "Create JIRA Ticket ${env.check_result}"
                             if ((params.CREATE_JIRA_ISSUE == true) &&  (env.check_result != '0')) {
 
 
@@ -135,7 +135,7 @@ pipeline {
 
                                 def jsonString = groovy.json.JsonOutput.toJson(JSON_PAYLOAD)
 
-                                createJiraIssue(PASSWORD, USERNAME, params.JIRA_URL, jsonString)
+                                createJIRAIssue(PASSWORD, USERNAME, params.JIRA_URL, jsonString)
                             }
                         }
                     }
@@ -266,11 +266,11 @@ def deltaScan() {
 }
 
 
-def createJiraIssue(jiraToken, jiraUsername, jiraAPIEndpoint, payload) {
+def createJIRAIssue(JIRA_TOKEN, JIRA_USERNAME, JIRA_API_ENDPOINT, payload) {
 
-    env.TOKEN = jiraToken
-    env.USER = jiraUsername
-    env.JIRA_ENDPOINT_URL = jiraAPIEndpoint + '/rest/api/2/issue/'
+    env.TOKEN = JIRA_Token
+    env.USER = JIRA_USERNAME
+    env.JIRA_ENDPOINT_URL = JORA_API_ENDPOINT + '/rest/api/2/issue/'
     env.PAYLOAD = payload
 
     try {
