@@ -123,7 +123,7 @@ pipeline {
                                         project : [
                                             key: params.JIRA_PROJECT_KEY
                                         ],
-                                        summary : "Components with Copyleft licenses found at ${env.REPOSITORY_NAME}",
+                                        summary : "Copyleft licenses found in ${env.REPOSITORY_NAME}",
                                         description: copyLeft,
                                         issuetype: [
                                             name: 'Bug'
