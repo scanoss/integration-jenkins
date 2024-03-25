@@ -24,13 +24,13 @@ The following Jenkins plugins need to be installed for the full set of features 
 
 2. Open the Jenkins dashboard and create a new pipeline job.
 
-3. Configure the pipeline job to use the provided [Jenkinsfile](Jenkinsfile). The Jenkinsfile contains a sample pipeline script that you can customize according to your project requirements.
+3. Configure the pipeline job to use the provided [Jenkinsfile](Jenkins-PR). The Jenkinsfile contains a sample pipeline script that you can customize according to your project requirements.
 
 ### How to configure Jenkins integration
 
 The recommended approach to integrate SCANOSS with Jenkins is to load the pipeline from a 'Jenkinsfile' file.  To load a pipeline from a file:
 
-1. Copy the example [`Jenkinsfile`](Jenkinsfile) from this repository to the root of your repository.
+1. Copy the example [`Jenkinsfile`](Jenkins-PR) from this repository to the root of your repository.
 2. Configure your Jenkins project as follows:
 
 -   Pipeline Definition
