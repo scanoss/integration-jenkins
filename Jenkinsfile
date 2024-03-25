@@ -107,7 +107,7 @@ pipeline {
                     /***** Jira issue *****/
                     withCredentials([usernamePassword(credentialsId: params.JIRA_TOKEN_ID ,usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
                         script {
-
+                            echo "Create Jira Ticket ${env.check_result}"
                             if ((params.CREATE_JIRA_ISSUE == true) &&  (env.check_result != '0')) {
 
 
