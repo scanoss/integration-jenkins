@@ -1,7 +1,7 @@
 
 # Integrating SCANOSS with Jenkins
 
-The following guide provides a basic setup example on integrating SCANOSS with Jenkins. This repository contains an example pipeline, capable of pulling a Github repository, scanning the source code with the [SCANOSS.PY](https://github.com/scanoss/scanoss.py) CLI, and creating an issue on Jira with files containing copyleft licenses. Additionally, a report is shown in the dashboard.
+The following guide provides a basic setup example on integrating SCANOSS with Jenkins. This repository contains an example pipeline, capable of pulling a Github repository, scanning the source code with the [SCANOSS.PY](https://github.com/scanoss/scanoss.py) CLI, and creating an issue in JIRA with files containing copyleft licenses. Additionally, a report is shown in the dashboard.
 
 ## Usage
 
@@ -52,7 +52,7 @@ A GitHub webhook is used to trigger the pipeline on every push action.
  - On Post content parameters, add a new variable. Variable name: 'payload' Value: '$'. Expression type: JSONPath
  - Assign a token to the trigger. The token should be used in the webhook URL. For instance `http://JENKINS_URL/generic-webhook-trigger/invoke?token=scanoss`
     
--   Finally set the Jenkins webhook URL on your GitHub project. For further details check the [Github webhook documentation](https://docs.github.com/en/webhooks/using-webhooks/creating-webhooks "https://docs.github.com/en/webhooks/using-webhooks/creating-webhooks").
+-   Finally set the Jenkins webhook URL in your GitHub project. For further details check the [Github webhook documentation](https://docs.github.com/en/webhooks/using-webhooks/creating-webhooks "https://docs.github.com/en/webhooks/using-webhooks/creating-webhooks").
 
 
 ### Scan result configuration
@@ -61,11 +61,11 @@ In our example pipeline, we process the scan output for license compliance. The 
 
 NOTE: Some steps may require custom credentials/secrets. For example: Reporting issues to JIRA or cloning a Private Github Repository.
 
-### Jira Integration (optional)
+### JIRA Integration (optional)
 
-In order to create issues in Jira, you must provide user credentials. New issues will be created in the name of the specified user. 
+In order to create issues in JIRA, you must provide user credentials. New issues will be created in the name of the specified user. 
 
-An API Token is required to integrate Jira. For further details, check the [Jira Documentation](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/).
+An API Token is required to integrate JIRA. For further details, check the [JIRA Documentation](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/).
 
 ### Private GitHub Integration (optional)
 
@@ -87,20 +87,20 @@ Use the same example pipeline, set the following ids:
 
 The following parameters are available in the example pipeline.
 
-| Parameter                | Description                              | Default  | Type    |
-|--------------------------|------------------------------------------|----------|---------|
-| SCANOSS_CLI_DOCKER_IMAGE | SCANOSS CLI Docker Image                 | [http://ghcr.io/scanoss/scanoss-py:latest](https://github.com/scanoss/scanoss.py/pkgs/container/scanoss-py)   | Pipeline |
-| ABORT_ON_POLICY_FAILURE  | Abort Pipeline on pipeline Failure       | false    | Pipeline |
+| Parameter                | Description                           | Default  | Type    |
+|--------------------------|---------------------------------------|----------|---------|
+| SCANOSS_CLI_DOCKER_IMAGE | SCANOSS CLI Docker Image              | [http://ghcr.io/scanoss/scanoss-py:latest](https://github.com/scanoss/scanoss.py/pkgs/container/scanoss-py)   | Pipeline |
+| ABORT_ON_POLICY_FAILURE  | Abort Pipeline on pipeline Failure    | false    | Pipeline |
 | ENABLE_DELTA_ANALYSIS    | Analyze those files what have changed or new ones | false    | Pipeline |
-| SCANOSS_API_URL          | SCANOSS API endpoint (Global)            | https://osskb.org/api/scan/direct | Global |
-| SCANOSS_API_TOKEN_ID     | SCANOSS API Token ID.                    | scanoss-token | Pipeline |
-| SCANOSS_SBOM_IDENTIFY    | SCANOSS SBOM Identify filename           | [sbom.json](sbom.json) | Pipeline |
-| SCANOSS_SBOM_IGNORE      | SCANOSS SBOM Ignore filename             | sbom-ignore.json | Pipeline |
-| GITHUB_TOKEN_ID          | Github Repository Token Credential ID.   | gh-token  | Pipeline |
-| CREATE_JIRA_ISSUE        | Enables Jira reporting                   | false    | Pipeline |
-| JIRA_URL                 | Jira URL                                 |          | Pipeline |
-| JIRA_PROJECT_KEY         | Jira Project Key                         |          | Pipeline |
-| JIRA_TOKEN_ID            | Jira Token Credential ID                 |  jira-token  | Pipeline |
+| SCANOSS_API_URL          | SCANOSS API endpoint (Global)         | https://osskb.org/api/scan/direct | Global |
+| SCANOSS_API_TOKEN_ID     | SCANOSS API Token ID.                 | scanoss-token | Pipeline |
+| SCANOSS_SBOM_IDENTIFY    | SCANOSS SBOM Identify filename        | [sbom.json](sbom.json) | Pipeline |
+| SCANOSS_SBOM_IGNORE      | SCANOSS SBOM Ignore filename          | sbom-ignore.json | Pipeline |
+| GITHUB_TOKEN_ID          | Github Repository Token Credential ID. | gh-token  | Pipeline |
+| CREATE_JIRA_ISSUE        | Enables JIRA reporting                | false    | Pipeline |
+| JIRA_URL                 | JIRA URL                                  |          | Pipeline |
+| JIRA_PROJECT_KEY         | JIRA Project Key                          |          | Pipeline |
+| JIRA_TOKEN_ID            | JIRA Token Credential ID                  |  jira-token  | Pipeline |
 
 ## Adding scan context
 
