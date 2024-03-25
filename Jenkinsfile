@@ -165,7 +165,7 @@ def copyleft() {
 
             check_result=$(if [ $(wc -l < $LICENSE_RESOURCE_PATH) -gt 1 ]; then echo "1"; else echo "0"; fi);
             echo \$check_result
-         ''')
+         ''').trim()
 
           if (params.ABORT_ON_POLICY_FAILURE && env.check_result != '0') {
             currentBuild.result = "FAILURE"
