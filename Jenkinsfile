@@ -52,22 +52,24 @@ pipeline {
                 script {
                     
                     /***** File names *****/
-                    env.SCANOSS_RESULTS_FILE_NAME = "scanoss-results.json"
-                    env.SCANOSS_LICENSE_FILE_NAME = "scanoss_license_data.csv"
-                    env.SCANOSS_COPYLEFT_FILE_NAME = "copyleft.md"
-                   
+                    env.SCANOSS_RESULTS_JSON_FILE = "scanoss-results.json"
+                    env.SCANOSS_LICENSE_CSV_FILE = "scanoss_license_data.csv"
+                    env.SCANOSS_COPYLEFT_MD_FILE = "copyleft.md"
 
-                    
+
                     /****** Create Resources folder ******/
-                    env.SCANOSS_RESOURCE_PATH = "scan_reports/scanoss_${currentBuild.number}"
-                    sh "mkdir -p ${env.SCANOSS_RESOURCE_PATH}"
+                    env.SCANOSS_BUILD_BASE_PATH = "scanoss/${currentBuild.number}"
+                    sh '''
+                        mkdir -p ${SCANOSS_BUILD_BASE_PATH}/reports
+                        mkdir -p ${SCANOSS_BUILD_BASE_PATH}/repository
+                        mkdir -p ${SCANOSS_BUILD_BASE_PATH}/delta
+                     '''
+                    env.SCANOSS_REPORT_FOLDER_PATH = "${SCANOSS_BUILD_BASE_PATH}/reports"
 
                     /***** Resources Paths *****/
-                    env.LICENSE_RESOURCE_PATH = "${env.SCANOSS_RESOURCE_PATH}/${env.SCANOSS_LICENSE_FILE_NAME}"
-                    env.SCANOSS_RESULTS_PATH = "${env.SCANOSS_RESOURCE_PATH}/${SCANOSS_RESULTS_FILE_NAME}"
-                    env.COPYLEFT_RESOURCE_PATH = "${env.SCANOSS_RESOURCE_PATH}/${env.SCANOSS_COPYLEFT_FILE_NAME}"
-
-
+                    env.SCANOSS_LICENSE_FILE_PATH = "${env.SCANOSS_REPORT_FOLDER_PATH}/${env.SCANOSS_LICENSE_CSV_FILE}"
+                    env.SCANOSS_RESULTS_FILE_PATH = "${env.SCANOSS_REPORT_FOLDER_PATH}/${SCANOSS_RESULTS_JSON_FILE}"
+                    env.SCANOSS_COPYLEFT_FILE_PATH = "${env.SCANOSS_REPORT_FOLDER_PATH}/${env.SCANOSS_COPYLEFT_MD_FILE}"
 
 
                     /****** Get Repository name and repo URL from payload ******/
@@ -77,7 +79,7 @@ pipeline {
 
 
                     /****** Checkout repository ******/
-                    dir('repository') {
+                    dir("${env.SCANOSS_BUILD_BASE_PATH}/repository") {
                         git branch: 'main',
                             credentialsId: params.GITHUB_TOKEN_ID,
                             url: 'https://github.com/scanoss/integrations-jenkins'
@@ -89,7 +91,7 @@ pipeline {
 
 
                     /***** Scan *****/
-                    env.SCAN_FOLDER = params.ENABLE_DELTA_ANALYSIS ? 'delta' : 'repository'
+                    env.SCAN_FOLDER = "${env.SCANOSS_BUILD_BASE_PATH}/" + (params.ENABLE_DELTA_ANALYSIS ? 'delta' : 'repository')
                     scan()
 
                     /***** Upload Artifacts *****/
@@ -114,7 +116,7 @@ pipeline {
                                 echo "JIRA issue parameter value: ${params.CREATE_JIRA_ISSUE}"
 
 
-                               def copyLeft = sh(script: "cat ${COPYLEFT_RESOURCE_PATH}", returnStdout: true)
+                               def copyLeft = sh(script: "cat ${SCANOSS_COPYLEFT_FILE_PATH}", returnStdout: true)
 
                                copyLeft = copyLeft +  "\nMore details can be found: ${BUILD_URL}\nSource repository: ${env.REPOSITORY_URL}"
 
@@ -137,7 +139,6 @@ pipeline {
                             }
                         }
                     }
-
                 }
             }
         }
@@ -146,24 +147,24 @@ pipeline {
 
 
 def publishReport() {
-     publishReport name: "Scan Results", displayType: "dual", provider: csv(id: "report-summary", pattern: "${env.LICENSE_RESOURCE_PATH}")
+     publishReport name: "Scan Results", displayType: "dual", provider: csv(id: "report-summary", pattern: "${env.SCANOSS_LICENSE_FILE_PATH}")
 }
 
 def copyleft() {
     try {
 
          env.check_result = sh (returnStdout: true, script: '''
-            echo 'component,name,copyleft' > $LICENSE_RESOURCE_PATH
+            echo 'component,name,copyleft' > $SCANOSS_LICENSE_FILE_PATH
 
-            jq -r 'reduce .[]?[] as \$item ({}; select(\$item.purl) | .[\$item.purl[0] + \"@\" + \$item.version] += [\$item.licenses[]? | select(.copyleft == \"yes\") | .name]) | to_entries[] | select(.value | unique | length > 0) | [.key, .key, (.value | unique | length)] | @csv' $SCANOSS_RESULTS_PATH >> $LICENSE_RESOURCE_PATH
+            jq -r 'reduce .[]?[] as \$item ({}; select(\$item.purl) | .[\$item.purl[0] + \"@\" + \$item.version] += [\$item.licenses[]? | select(.copyleft == \"yes\") | .name]) | to_entries[] | select(.value | unique | length > 0) | [.key, .key, (.value | unique | length)] | @csv' $SCANOSS_RESULTS_FILE_PATH >> $SCANOSS_LICENSE_FILE_PATH
             
             
-            printf '|| Component || Purl || Version || Licenses||\n' > $COPYLEFT_RESOURCE_PATH           
+            printf '|| Component || Purl || Version || Licenses||\n' > $SCANOSS_COPYLEFT_FILE_PATH
 
-            jq -r '[.[]?[] | select(.licenses) | select(.licenses[] | .copyleft? == \"yes\") | {component: .component, version: .version, purl: .purl[], licenses: (.licenses | map(.name) | join(\",\"))}] | unique_by(.purl) | sort_by(.component) | to_entries[] | "|\\(.value.component)|\\(.value.purl)|\\(.value.version)|\\(.value.licenses)|"'  $SCANOSS_RESULTS_PATH >> $COPYLEFT_RESOURCE_PATH 
+            jq -r '[.[]?[] | select(.licenses) | select(.licenses[] | .copyleft? == \"yes\") | {component: .component, version: .version, purl: .purl[], licenses: (.licenses | map(.name) | join(\",\"))}] | unique_by(.purl) | sort_by(.component) | to_entries[] | "|\\(.value.component)|\\(.value.purl)|\\(.value.version)|\\(.value.licenses)|"'  $SCANOSS_RESULTS_FILE_PATH >> $SCANOSS_COPYLEFT_FILE_PATH
            
 
-            check_result=$(if [ $(wc -l < $LICENSE_RESOURCE_PATH) -gt 1 ]; then echo "1"; else echo "0"; fi);
+            check_result=$(if [ $(wc -l < $SCANOSS_LICENSE_FILE_PATH) -gt 1 ]; then echo "1"; else echo "0"; fi);
             echo \$check_result
          ''').trim()
 
@@ -180,15 +181,15 @@ def copyleft() {
 }
 
 
- def uploadArtifacts() {
-  def scanossResultsPath = "${env.SCANOSS_RESULTS_PATH}"
+def uploadArtifacts() {
+  def scanossResultsPath = "${env.SCANOSS_RESULTS_FILE_PATH}"
   archiveArtifacts artifacts: scanossResultsPath, onlyIfSuccessful: true
 }
 
 
 def scan() {
   withCredentials([string(credentialsId: params.SCANOSS_API_TOKEN_ID , variable: 'SCANOSS_API_TOKEN')]) {
-    dir("${SCAN_FOLDER}") {
+    dir("${env.SCAN_FOLDER}") {
         script {
              sh '''
                  SBOM_IDENTIFY=""
@@ -204,12 +205,9 @@ def scan() {
                  if [ ! -z $SCANOSS_API_TOKEN ]; then CUSTOM_TOKEN="--key $SCANOSS_API_TOKEN" ; fi
 
 
-                 scanoss-py scan $CUSTOM_URL $CUSTOM_TOKEN $SBOM_IDENTIFY $SBOM_IGNORE --output ../$SCANOSS_RESULTS_FILE_NAME .
+                 scanoss-py scan $CUSTOM_URL $CUSTOM_TOKEN $SBOM_IDENTIFY $SBOM_IGNORE --output $WORKSPACE/$SCANOSS_REPORT_FOLDER_PATH/$SCANOSS_RESULTS_JSON_FILE .
 
-                 cp ../$SCANOSS_RESULTS_FILE_NAME $WORKSPACE/$SCANOSS_RESOURCE_PATH/$SCANOSS_RESULTS_FILE_NAME
-
-            '''
-
+                 '''
         }
     }
   }
@@ -218,60 +216,52 @@ def scan() {
 def deltaScan() {
    if (params.ENABLE_DELTA_ANALYSIS == true) {
 
+        echo 'Delta Scan Analysis enabled'
 
-                            echo 'Delta Scan Analysis enabled'
+        // Parse the JSON payload
+        def payloadJson = readJSON text: env.payload
 
-                            // Parse the JSON payload
-                            def payloadJson = readJSON text: env.payload
+        def commits = payloadJson.commits
 
-                            def commits = payloadJson.commits
+        // Define the destination folder
+        def destinationFolder = "${env.SCANOSS_BUILD_BASE_PATH}/delta"
 
-                            // Define the destination folder
-                            def destinationFolder = "${env.WORKSPACE}/delta"
+        // Define a set to store unique file names
+        def uniqueFileNames = new HashSet()
 
-                            // Define a set to store unique file names
-                            def uniqueFileNames = new HashSet()
+        // Iterate over each commit
+        commits.each { commit ->
 
-                            // Remove the destination folder if it exists
-                            sh "rm -rf ${destinationFolder}"
+            // Modified files
+            commit.modified.each { fileName ->
+                // Trim any leading or trailing whitespaces
+                fileName = fileName.trim()
 
-                            // Create the destination folder if it doesn't exist
-                            sh "mkdir -p ${destinationFolder}"
+                uniqueFileNames.add(fileName)
+            }
 
+            // New files added
+            commit.added.each { fileName ->
+                // Trim any leading or trailing whitespaces
+                fileName = fileName.trim()
 
-                                // Iterate over each commit
-                                commits.each { commit ->
+                uniqueFileNames.add(fileName)
 
+            }
+        }
 
-                                    // Modified files
-                                    commit.modified.each { fileName ->
-                                        // Trim any leading or trailing whitespaces
-                                        fileName = fileName.trim()
+        dir("${env.SCANOSS_BUILD_BASE_PATH}/repository"){
+            uniqueFileNames.each { file ->
 
-                                        uniqueFileNames.add(fileName)
-                                    }
+                // Construct the source and destination paths
+                        def sourcePath = "${file}"
+                        def destinationPath = "${destinationFolder}"
 
-                                    // New files added
-                                    commit.added.each { fileName ->
-                                        // Trim any leading or trailing whitespaces
-                                        fileName = fileName.trim()
+                        // Copy the file
+                    sh "cp --parents ${sourcePath} ${destinationPath}"
 
-                                        uniqueFileNames.add(fileName)
-
-                                    }
-                                }
-                            dir('repository'){
-                                uniqueFileNames.each { file ->
-
-                                    // Construct the source and destination paths
-                                            def sourcePath = "${file}"
-                                            def destinationPath = "${destinationFolder}"
-
-                                            // Copy the file
-                                        sh "cp --parents ${sourcePath} ${destinationPath}"
-
-                                }
-                            }
+            }
+        }
     }
 }
 
