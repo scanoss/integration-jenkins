@@ -1,7 +1,13 @@
 
 # Integrating SCANOSS with Jenkins
 
-The following guide provides a basic setup example on integrating SCANOSS with Jenkins. This repository contains an example pipeline, capable of pulling a Github repository, scanning the source code with the [SCANOSS.PY](https://github.com/scanoss/scanoss.py) CLI, and creating an issue in JIRA with files containing copyleft licenses. Additionally, a report is shown in the dashboard.
+The following guide provides a basic setup example on integrating SCANOSS with Jenkins.
+
+This repository contains an example pipeline capable of:
+- Cloning a Github repository
+- Scanning the source code with the [SCANOSS.PY](https://github.com/scanoss/scanoss.py) CLI
+- Creating an issue in JIRA with files containing copyleft licenses.
+- Adding a report is shown in the dashboard.
 
 ## Usage
 
@@ -24,7 +30,7 @@ The following Jenkins plugins need to be installed for the full set of features 
 
 2. Open the Jenkins dashboard and create a new pipeline job.
 
-3. Configure the pipeline job to use the provided [Jenkinsfile](Jenkins-PR). The Jenkinsfile contains a sample pipeline script that you can customize according to your project requirements.
+3. Configure the pipeline job to use the provided [Jenkinsfile-PR](Jenkins-PR). The Jenkinsfile contains a sample pipeline script that you can customize according to your project requirements.
 
 ### How to configure Jenkins integration
 
