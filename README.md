@@ -1,16 +1,16 @@
 
 # Integrating SCANOSS with Jenkins
 
-The following guide provides a basic setup example on integrating SCANOSS with Jenkins.
+The following guide provides a basic setup example on how to integrate SCANOSS with Jenkins.
 
 This repository contains an example pipeline capable of:
 - Cloning a Github repository
 - Scanning the source code with the [SCANOSS.PY](https://github.com/scanoss/scanoss.py) CLI
-- Creating an issue in JIRA with files containing copyleft licenses.
+- Creating an issue in JIRA with copyleft and undeclared components information
 
-## Usage
+## Use
 
-Ensure you have all necessary prerequisites in place and carefully follow the provided instructions.
+Ensure you have all necessary pre-requisites in place and carefully follow the provided instructions.
 
 ### Pre-requisites
 
@@ -42,7 +42,7 @@ The SCANOSS Jenkins integrations provides two policies:
 ![SCANOSS Integration Pipeline Creation](./assets/images/new-pipeline-2.png)
 
 
-### How to configure Jenkins integration
+### Jenkins integration setup
 
 The recommended approach to integrate SCANOSS with Jenkins is to load the pipeline from a 'Jenkinsfile' file.  To load a pipeline from a file:
 
@@ -58,7 +58,7 @@ The recommended approach to integrate SCANOSS with Jenkins is to load the pipeli
             -   Enter Branch to build
             -   Set script path as “Jenkinsfile”
 
-### Jenkins Credentials
+## Jenkins Credentials
 
 To improve security, credentials should be set in Jenkins credential store.
 
@@ -66,9 +66,9 @@ Navigate to Dashboard > Manage Jenkins > Credentials and select a credential sto
 
 Use the same example pipeline, set the following ids:
 
-- jira-credentials: JIRA Token to report issues. Type: user&password
-- gh-token: GitHub crendentials to access private repositories. Type: user&password
-- scanoss-token: SCANOSS Premium subscription Key. Type: Secret text
+- ***jira-credentials***: JIRA Token to report issues. Type: user&password
+- ***gh-token***: GitHub crendentials to access private repositories. Type: user&password
+- ***scanoss-token***: SCANOSS Premium subscription Key. Type: Secret text
 
 # Jenkins Pipeline Configuration Guide
 
@@ -146,6 +146,11 @@ Configure your GitHub repository URL in the project settings:
 ![Github webhook trigger set up](./assets/images/gh-webhook-1.png)
 
 #### Jenkins file pipeline setup:
+
+
+### Private GitHub Integration (optional)
+> ⚡ Important: For private GitHub repositories, it is necessary to provide user credentials. For further details, check [Github Documentation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens).
+
 ![Jenkins pipeline file setup](./assets/images/pipeline-configuration-5.png)
 
 # SCANOSS Policy Check Reports
@@ -179,7 +184,11 @@ Jenkins stores all SCANOSS scan reports in the run artifacts section for easy ac
 
 ## JIRA Integration Reports
 
-SCANOSS automatically creates detailed JIRA issues when policy checks fail.
+> ⚡ Important: JIRA issues are automatically created only when policy checks fail and JIRA integration is configured.
+
+In order to create issues in JIRA, you must provide Jira credentials. New issues will be created in the name of the specified user.
+
+An API Token is required to integrate JIRA. For further details, check the [JIRA Documentation](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/).
 
 ### Undeclared Components Report
 ![JIRA issue showing undeclared components detected by SCANOSS](./assets/images/jira-undeclared-components-report.png)
@@ -187,17 +196,7 @@ SCANOSS automatically creates detailed JIRA issues when policy checks fail.
 ### Copyleft License Report
 ![JIRA issue detailing components with copyleft licenses](./assets/images/jira-copyleft-report.png)
 
-> ⚡ Important: JIRA issues are automatically created only when policy checks fail and JIRA integration is configured.
 
-### JIRA Integration (optional)
-
-In order to create issues in JIRA, you must provide Jira credentials. New issues will be created in the name of the specified user. 
-
-An API Token is required to integrate JIRA. For further details, check the [JIRA Documentation](https://support.atlassian.com/atlassian-account/docs/manage-api-tokens-for-your-atlassian-account/).
-
-### Private GitHub Integration (optional)
-
-In the case of accessing private GitHub repositories, it is necessary to provide user credentials. For further details, check [Github Documentation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens).
 
 
 
