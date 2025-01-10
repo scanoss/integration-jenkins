@@ -19,7 +19,7 @@ pipeline {
         string(name: 'DEPENDENCY_SCOPE_EXCLUDE', defaultValue: '', description: 'Custom list of dependency scopes to be excluded. Provide scopes as a comma-separated list.')
 
         // Copyleft licenses
-        string(name: 'LICENSES_COPYLEFT_INCLUDE', defaultValue: 'MIT', description: 'List of Copyleft licenses to append to the default list. Provide licenses as a comma-separated list.')
+        string(name: 'LICENSES_COPYLEFT_INCLUDE', defaultValue: '', description: 'List of Copyleft licenses to append to the default list. Provide licenses as a comma-separated list.')
         string(name: 'LICENSES_COPYLEFT_EXCLUDE', defaultValue: '', description: 'List of Copyleft licenses to remove from default list. Provide licenses as a comma-separated list.')
         string(name: 'LICENSES_COPYLEFT_EXPLICIT', defaultValue: '', description: 'Explicit list of Copyleft licenses to consider. Provide licenses as a comma-separated list.')
 
@@ -123,10 +123,6 @@ def createJiraMarkdownUndeclaredComponentReport() {
             sh """
                 # Start with components file
                 cat scanoss-undeclared-components-jira.md scanoss-undeclared-status-jira.md > "${env.SCANOSS_UNDECLARED_JIRA_REPORT_MD}"
-
-                # Show final result
-                echo "\n=== Final Combined Content ==="
-                cat "${env.SCANOSS_UNDECLARED_JIRA_REPORT_MD}"
 
                 chmod 644 "${env.SCANOSS_UNDECLARED_JIRA_REPORT_MD}"
             """
