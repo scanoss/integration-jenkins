@@ -1,4 +1,3 @@
-
 pipeline {
     agent any
 
@@ -26,9 +25,9 @@ pipeline {
 
 
         string(name: 'JIRA_CREDENTIALS', defaultValue:"jira-credentials" , description: 'Jira credentials')
-        string(name: 'JIRA_URL', defaultValue:"https://scanoss.atlassian.net/" , description: 'Jira URL')
-        string(name: 'JIRA_PROJECT_KEY', defaultValue:"TESTPROJ" , description: 'Jira Project Key')
-        booleanParam(name: 'CREATE_JIRA_ISSUE', defaultValue: true, description: 'Enable Jira reporting')
+        string(name: 'JIRA_URL', defaultValue:"" , description: 'Jira URL')
+        string(name: 'JIRA_PROJECT_KEY', defaultValue:"" , description: 'Jira Project Key')
+        booleanParam(name: 'CREATE_JIRA_ISSUE', defaultValue: false, description: 'Enable Jira reporting')
         booleanParam(name: 'ABORT_ON_POLICY_FAILURE', defaultValue: false, description: 'Abort Pipeline on pipeline Failure')
     }
 
@@ -70,8 +69,8 @@ pipeline {
                    scan()
                    copyleftPolicyCheck()
                    undeclaredComponentsPolicyCheck()
-                   echo "Copyleft STATUS ${env.COPYLEFT_POLICY_STATUS}"
-                   echo "undeclared Components STATUS ${env.UNDECLARED_POLICY_STATUS}"
+                   echo "[ Copyleft status ]: ${env.COPYLEFT_POLICY_STATUS}"
+                   echo "[ Undeclared Components status ]: ${env.UNDECLARED_POLICY_STATUS}"
 
                     // Create Jira issues if enabled
                     if (params.CREATE_JIRA_ISSUE) {
@@ -155,10 +154,8 @@ def createJiraMarkdownCopyleftReport(){
             script: cmd.join(' '),
             returnStatus: true
         )
-
     }
 }
-
 
 def undeclaredComponentsPolicyCheck() {
     script {
@@ -191,10 +188,6 @@ def undeclaredComponentsPolicyCheck() {
 
                 # Append status file
                 cat scanoss-undeclared-status.md >> "${env.SCANOSS_UNDECLARED_REPORT_MD}"
-
-                # Show final result
-                echo "\n=== Final Combined Content ==="
-                cat "${env.SCANOSS_UNDECLARED_REPORT_MD}"
 
                 chmod 644 "${env.SCANOSS_UNDECLARED_REPORT_MD}"
             """
@@ -353,16 +346,9 @@ def createJiraTicket(String title, String filePath) {
                 error "File ${filePath} not found"
             }
             def buildUrl = env.BUILD_URL
-            echo "FILE CONTENT: ${fileContent}"
-            def cleanContent = fileContent
-            .replace('\\n', '\n')
-            .replace('\\"', '"') // Remove escaped quote
-            .replace('\\', '') // Remove any remaining backslashes
             def content = fileContent + "\nMore details can be found: ${buildUrl}"
 
-            echo "CLEAN CONTENT: ${content}"
-
-            // Prepare JIRA ticket payload
+            // JIRA ticket payload
             def payload = [
                 fields: [
                     project: [key: params.JIRA_PROJECT_KEY],
@@ -373,7 +359,6 @@ def createJiraTicket(String title, String filePath) {
             ]
 
             def jsonString = groovy.json.JsonOutput.toJson(payload)
-            echo "JSON STRING: ${jsonString}"
 
             def response = sh(
                 script: '''
