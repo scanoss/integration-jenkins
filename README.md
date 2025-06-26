@@ -28,7 +28,7 @@ The SCANOSS Jenkins integrations provides two policies:
 1. ***Copyleft***: This policy checks if any component or code snippet is associated with a copyleft license. If such a
    license is detected, the pull request (PR) is rejected. The default list of Copyleft licenses is defined in the following [file](https://github.com/scanoss/ado-code-scan/blob/1218c4fe2dcda5f807b505e271096b1ec0afd8a9/codescantask/utils/license.utils.ts#L4).
 
-2. ***Undeclared***: This policy compares the components detected in the repository against those declared in the sbom.json
+2. ***Undeclared***: This policy compares the components detected in the repository against those declared in the scanoss.json
    file (customizable through the scanoss.json filepath parameter). If undeclared components are detected, the pipeline will fail.
 
 ### Instructions
@@ -76,26 +76,26 @@ Use the same example pipeline, set the following ids:
 
 The following parameters are available in the example pipeline.
 
-| Parameter                  | Description                                                                                                                                              | Default                                                                                                                                               | Type     |
-|----------------------------|----------------------------------------------------------------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------|----------|
-| SCANOSS_CLI_DOCKER_IMAGE   | SCANOSS CLI Docker Image.                                                                                                                                | [https://ghcr.io/scanoss/scanoss-py-jenkins:v1.19.5](https://github.com/scanoss/scanoss.py/pkgs/container/scanoss-py-jenkins/337045183?tag=v1.19.5)   | Pipeline |
-| ABORT_ON_POLICY_FAILURE    | Abort pipeline on pipeline failure.                                                                                                                      | `false`                                                                                                                                               | Pipeline |
-| SCANOSS_API_URL            | SCANOSS API endpoint.                                                                                                                                    | https://api.osskb.org/scan/direct                                                                                                                     | Pipeline |
-| SCANOSS_API_TOKEN_ID       | SCANOSS API Token ID.                                                                                                                                    | scanoss-token                                                                                                                                         | Pipeline |
-| SKIP_SNIPPET               | Skip the generation of snippets.                                                                                                                         | `false`                                                                                                                                               | Pipeline |
-| SCANOSS_SETTINGS           | Settings file to use for scanning. See the SCANOSS settings [documentation](https://scanoss.readthedocs.io/projects/scanoss-py/en/latest/#settings-file) | `true`                                                                                                                                                | Pipeline |
-| SETTINGS_FILE_PATH         | SCANOSS settings file path.                                                                                                                              | scanoss.json                                                                                                                                          | Pipeline |
-| DEPENDENCY_ENABLED         | Scan dependencies (optional - default false).                                                                                                            | `false`                                                                                                                                               | Pipeline |
-| DEPENDENCY_SCOPE           | Gets development or production dependencies (scopes:  'prod' - 'dev').                                                                                   | ''                                                                                                                                                    | Pipeline |
-| DEPENDENCY_SCOPE_INCLUDE   | Custom list of dependency scopes to be included. Provide scopes as a comma-separated list.                                                               | ''                                                                                                                                                    | Pipeline |
-| DEPENDENCY_SCOPE_EXCLUDE   | Custom list of dependency scopes to be EXCLUDED. Provide scopes as a comma-separated list.                                                               | ''                                                                                                                                                    | Pipeline |
-| LICENSES_COPYLEFT_INCLUDE  | List of Copyleft licenses to append to the default list. Provide licenses as a comma-separated list.                                                     | ''                                                                                                                                                    | Pipeline |
-| LICENSES_COPYLEFT_EXCLUDE  | List of Copyleft licenses to remove from default list. Provide licenses as a comma-separated list.                                                       | ''                                                                                                                                                    | Pipeline |
-| LICENSES_COPYLEFT_EXPLICIT | Explicit list of Copyleft licenses to consider. Provide licenses as a comma-separated list.                                                              | ''                                                                                                                                                    | Pipeline |
-| CREATE_JIRA_ISSUE          | Enables JIRA reporting                                                                                                                                   | `false`                                                                                                                                               | Pipeline |
-| JIRA_URL                   | JIRA URL                                                                                                                                                 | ''                                                                                                                                                    | Pipeline |
-| JIRA_PROJECT_KEY           | JIRA Project Key                                                                                                                                         | ''                                                                                                                                                    | Pipeline |
-| JIRA_CREDENTIALS           | JIRA credentials ID                                                                                                                                      | jira-credentials                                                                                                                                      | Pipeline |
+| Parameter                  | Description                                                                                                                                                              | Default                                                                                                                                             | Type     |
+|----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------|----------|
+| SCANOSS_CLI_DOCKER_IMAGE   | SCANOSS CLI Docker Image.                                                                                                                                                | [https://ghcr.io/scanoss/scanoss-py-jenkins:v1.26.3](https://github.com/scanoss/scanoss.py/pkgs/container/scanoss-py-jenkins/337045183?tag=v1.26.3) | Pipeline |
+| ABORT_ON_POLICY_FAILURE    | Abort pipeline on pipeline failure.                                                                                                                                      | `false`                                                                                                                                             | Pipeline |
+| SCANOSS_API_URL            | SCANOSS API endpoint.                                                                                                                                                    | https://api.osskb.org/scan/direct                                                                                                                   | Pipeline |
+| SCANOSS_API_TOKEN_ID       | SCANOSS API Token ID.                                                                                                                                                    | scanoss-token                                                                                                                                       | Pipeline |
+| SKIP_SNIPPET               | Skip the generation of snippets.                                                                                                                                         | `false`                                                                                                                                             | Pipeline |
+| SCANOSS_SETTINGS           | Settings file to use for scanning. See the SCANOSS settings [documentation](https://scanoss.readthedocs.io/projects/scanoss-py/en/latest/#settings-file)                 | `true`                                                                                                                                              | Pipeline |
+| SETTINGS_FILE_PATH         | SCANOSS settings file path.                                                                                                                                              | scanoss.json                                                                                                                                        | Pipeline |
+| DEPENDENCY_ENABLED         | Scan dependencies (optional - default false).                                                                                                                            | `false`                                                                                                                                             | Pipeline |
+| DEPENDENCY_SCOPE           | Gets development or production dependencies (scopes:  'prod' - 'dev').                                                                                                   | ''                                                                                                                                                  | Pipeline |
+| DEPENDENCY_SCOPE_INCLUDE   | Custom list of dependency scopes to be included. Provide scopes as a comma-separated list.                                                                               | ''                                                                                                                                                  | Pipeline |
+| DEPENDENCY_SCOPE_EXCLUDE   | Custom list of dependency scopes to be EXCLUDED. Provide scopes as a comma-separated list.                                                                               | ''                                                                                                                                                  | Pipeline |
+| LICENSES_COPYLEFT_INCLUDE  | List of Copyleft licenses to append to the default list. Provide licenses as a comma-separated list.                                                                     | ''                                                                                                                                                  | Pipeline |
+| LICENSES_COPYLEFT_EXCLUDE  | List of Copyleft licenses to remove from default list. Provide licenses as a comma-separated list.                                                                       | ''                                                                                                                                                  | Pipeline |
+| LICENSES_COPYLEFT_EXPLICIT | Explicit list of Copyleft licenses to consider. Provide licenses as a comma-separated list.                                                                              | ''                                                                                                                                                  | Pipeline |
+| CREATE_JIRA_ISSUE          | Enables JIRA reporting                                                                                                                                                   | `false`                                                                                                                                             | Pipeline |
+| JIRA_URL                   | JIRA URL                                                                                                                                                                 | ''                                                                                                                                                  | Pipeline |
+| JIRA_PROJECT_KEY           | JIRA Project Key                                                                                                                                                         | ''                                                                                                                                                  | Pipeline |
+| JIRA_CREDENTIALS           | JIRA credentials ID                                                                                                                                                      | jira-credentials                                                                                                                                    | Pipeline |
 
 
 ## Setting Up GitHub Webhook Trigger
@@ -152,6 +152,40 @@ Configure your GitHub repository URL in the project settings:
 > ⚡ Important: For private GitHub repositories, it is necessary to provide user credentials. For further details, check [Github Documentation](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens).
 
 ![Jenkins pipeline file setup](./assets/images/pipeline-configuration-5.png)
+
+
+
+# Multibranch pipeline example
+## Setup Instructions
+
+### Setup Steps
+
+1. Navigate to **Dashboard > Select 'Multibranch Pipeline' option > Configure**
+2. On 'Branch Sources' section add your repository URL and credentials
+3. Select your desired pipeline behaviours
+4. On 'Build Configuration' section select:
+- Mode: 'by Jenkinsfile'
+- Script Path: 'Jenkinsfile'
+5. Apply your changes and save them
+
+#### Step 1: Pipeline Selection
+From the Jenkins Dashboard, choose ***"Multibranch Pipeline"*** to create a new pipeline that will automatically manage multiple branches.
+![Multibranch pipeline creation](./assets/images/multibranch-pipeline-1.png)
+
+#### Step 2: Repository Configuration
+Configure your repository URL and set up the necessary credentials for accessing your Git repository.
+
+![Multibranch pipeline repository configuration and credentials](./assets/images/multibranch-pipeline-2.png)
+
+#### Step 3: Pipeline Behaviors
+Select the desired pipeline behaviors such as branch discovery strategies and build triggers.
+
+![Multibranch pipeline behaviour](./assets/images/multibranch-pipeline-3.png)
+
+#### Step 4: Build Configuration
+Set the build configuration mode to "by Jenkinsfile" and specify the script path.
+
+![Multibranch pipeline build configuration](./assets/images/multibranch-pipeline-4.png)
 
 # SCANOSS Policy Check Reports
 
