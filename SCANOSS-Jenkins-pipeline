@@ -34,6 +34,15 @@ pipeline {
 
         // Debug
         booleanParam(name: 'DEBUG', defaultValue: false , description: 'Enable debugging')
+
+        // Dependency Track
+        booleanParam(name: 'DEPENDENCY_TRACK_ENABLED', defaultValue: false, description: "Enable automatic upload of scan results to Dependency Track")
+        string(name: 'DEPENDENCY_TRACK_API_KEY_ID', defaultValue:"dependency-track-api-key", description: "The reference ID for the Dependency Track API KEY credential")
+        string(name: 'DEPENDENCY_TRACK_URL', defaultValue:"" , description: "URL of the Dependency Track instance. Required when Dependency Track is enabled")
+        string(name: 'DEPENDENCY_TRACK_PROJECT_ID', defaultValue:"" , description: "UUID of an existing project in Dependency Track. Required when project name and version are not provided")
+        string(name: 'DEPENDENCY_TRACK_PROJECT_NAME', defaultValue:"" , description: "Dependency track project name identifier. (will be created if it doesn't exist). Required when project ID is not provided")
+        string(name: 'DEPENDENCY_TRACK_PROJECT_VERSION', defaultValue:"" , description: "Dependency Track project Version identifier. Required when project ID is not provided")
+
     }
 
     environment {
@@ -42,6 +51,7 @@ pipeline {
         SCANOSS_COPYLEFT_REPORT_MD = "scanoss-copyleft-report.md"
         SCANOSS_UNDECLARED_REPORT_MD = "scanoss-undeclared-report.md"
         SCANOSS_RESULTS_OUTPUT_FILE_NAME = "results.json"
+        CYCLONEDX_FILE_NAME = "cyclonedx.json"
 
 
         // Markdown Jira report file names
@@ -72,8 +82,10 @@ pipeline {
 
 
                    scan()
+                   generateCycloneDXOutput()
                    copyleftPolicyCheck()
                    undeclaredComponentsPolicyCheck()
+                   uploadToDependencyTrack()
                    echo "[ Copyleft status ]: ${env.COPYLEFT_POLICY_STATUS}"
                    echo "[ Undeclared Components status ]: ${env.UNDECLARED_POLICY_STATUS}"
 
@@ -301,6 +313,124 @@ def scan() {
         }
     }
 }
+
+def generateCycloneDXOutput(){
+    script {
+        def cmd = [
+            'scanoss-py',
+            'convert',
+            '--input',
+            env.SCANOSS_RESULTS_OUTPUT_FILE_NAME,
+            '--format',
+            'cyclonedx',
+            '--output',
+            env.CYCLONEDX_FILE_NAME]
+
+        // Execute command
+        def exitCode = sh(
+            script: cmd.join(' '),
+            returnStatus: true
+        )
+
+        if (exitCode != 0) {
+            echo "ERROR: CycloneDX file conversion failed ${exitCode}"
+            return
+        }
+        uploadArtifact(env.CYCLONEDX_FILE_NAME)
+    }
+}
+
+def validateDependencyTrackConfiguration() {
+    withCredentials([string(credentialsId: params.DEPENDENCY_TRACK_API_KEY_ID, variable: 'DEPENDENCY_TRACK_API_KEY')]) {
+
+        def missingParams = []
+
+        // Check required parameters
+        if (!params.DEPENDENCY_TRACK_URL) {
+            missingParams.add('dependencytrack.url')
+        }
+        if (!env.DEPENDENCY_TRACK_API_KEY) {
+            missingParams.add('dependencytrack.apikey')
+        }
+
+        if (missingParams.size() > 0) {
+            throw new Exception("Dependency Track is enabled but required parameters are missing: ${missingParams.join(', ')}")
+        }
+
+        // Check project identification - must have either projectId OR (projectName + projectVersion)
+        if (!params.DEPENDENCY_TRACK_PROJECT_ID) {
+            def missingProjectParams = []
+
+            if (!params.DEPENDENCY_TRACK_PROJECT_NAME) {
+                missingProjectParams.add('DEPENDENCY_TRACK_PROJECT_NAME')
+            }
+            if (!params.DEPENDENCY_TRACK_PROJECT_VERSION) {
+                missingProjectParams.add('DEPENDENCY_TRACK_PROJECT_VERSION')
+            }
+
+            if (missingProjectParams.size() > 0) {
+                throw new Exception(
+                    "Dependency Track is enabled but project identification is incomplete. " +
+                    "Either provide 'DEPENENCY_TRACK_PROJECT_ID' OR both 'DEPENDENCY_TRACK_PROJECT_NAME' and 'DEPENDENCY_TRACK_PROJECT_VERSION'. " +
+                    "Missing: ${missingProjectParams.join(', ')}"
+                )
+            }
+        }
+    }
+}
+
+def uploadToDependencyTrack(){
+    withCredentials([string(credentialsId: params.DEPENDENCY_TRACK_API_KEY_ID, variable: 'DEPENDENCY_TRACK_API_KEY')]) {
+        try {
+
+            if (!params.DEPENDENCY_TRACK_ENABLED) {
+                echo "Dependency Track upload is disabled"
+                return
+            }
+            validateDependencyTrackConfiguration()
+
+            def args = [
+                'scanoss-py',
+                'export',
+                'dependency-track',
+                '--input',
+                env.CYCLONEDX_FILE_NAME,
+                '--dt-apikey',
+                env.DEPENDENCY_TRACK_API_KEY,
+                '--dt-url',
+                params.DEPENDENCY_TRACK_URL
+            ]
+
+            if (params.DEPENDENCY_TRACK_PROJECT_ID) {
+                args.addAll(['--dt-projectid', params.DEPENDENCY_TRACK_PROJECT_ID])
+            }
+
+            if (params.DEPENDENCY_TRACK_PROJECT_NAME) {
+                args.addAll(['--dt-projectname', params.DEPENDENCY_TRACK_PROJECT_NAME])
+            }
+
+            if (params.DEPENDENCY_TRACK_PROJECT_VERSION) {
+                args.addAll(['--dt-projectversion', params.DEPENDENCY_TRACK_PROJECT_VERSION])
+            }
+
+            // Execute command
+            def exitCode = sh(
+                script: args.join(' '),
+                returnStatus: true
+            )
+
+            if (exitCode != 0) {
+                throw new Exception("Dependency Track upload failed:  ${exitCode}")
+            }
+            echo "CycloneDX successfully uploaded to Dependency Track"
+
+        } catch (Exception e) {
+            echo "${e.message}"
+            currentBuild.result = 'UNSTABLE'
+        }
+    }
+}
+
 
 def uploadArtifact(artifactPath) {
     archiveArtifacts artifacts: artifactPath, onlyIfSuccessful: true
