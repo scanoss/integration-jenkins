@@ -42,6 +42,9 @@ pipeline {
         SCANOSS_COPYLEFT_REPORT_MD = "scanoss-copyleft-report.md"
         SCANOSS_UNDECLARED_REPORT_MD = "scanoss-undeclared-report.md"
         SCANOSS_RESULTS_OUTPUT_FILE_NAME = "results.json"
+        SCANOSS_CYCLONEDX_REPORT_FILE_NAME = "scanoss-cyclonedx.json"
+        SCANOSS_SPDX_REPORT_FILE_NAME = "scanoss-spdx.json"
+        SCANOSS_CSV_REPORT_FILE_NAME = "scanoss-sbom.csv"
 
 
         // Markdown Jira report file names
@@ -72,6 +75,15 @@ pipeline {
 
 
                    scan()
+
+                   // Output formats
+                   // CycloneDX 1.4
+                   convertToCycloneDX()
+                   // SPDX 2.2
+                   convertToSPDX()
+                   // CSV
+                   convertToCSV()
+
                    copyleftPolicyCheck()
                    undeclaredComponentsPolicyCheck()
                    echo "[ Copyleft status ]: ${env.COPYLEFT_POLICY_STATUS}"
@@ -299,6 +311,102 @@ def scan() {
 
             uploadArtifact(env.SCANOSS_RESULTS_OUTPUT_FILE_NAME)
         }
+    }
+}
+
+def convertToCycloneDX() {
+    script {
+        def cmd = [
+            'scanoss-py',
+            'convert',
+            '--input',
+            env.SCANOSS_RESULTS_OUTPUT_FILE_NAME,
+            '--format',
+            'cyclonedx',
+            '--output',
+            env.SCANOSS_CYCLONEDX_REPORT_FILE_NAME
+        ]
+
+        // Debug
+        if(params.DEBUG) {
+            cmd << "--debug"
+        }
+
+        // Execute command
+        def exitCode = sh(
+            script: cmd.join(' '),
+            returnStatus: true
+        )
+
+        if (exitCode != 0) {
+            echo "Warning: failed to convert scannos raw results to cylonedx format. Exit code ${exitCode}"
+        }
+
+        uploadArtifact(env.SCANOSS_CYCLONEDX_REPORT_FILE_NAME)
+    }
+}
+
+def convertToSPDX() {
+    script {
+        def cmd = [
+            'scanoss-py',
+            'convert',
+            '--input',
+            env.SCANOSS_RESULTS_OUTPUT_FILE_NAME,
+            '--format',
+            'spdxlite',
+            '--output',
+            env.SCANOSS_SPDX_REPORT_FILE_NAME
+        ]
+
+        // Debug
+        if(params.DEBUG) {
+            cmd << "--debug"
+        }
+
+        // Execute command
+        def exitCode = sh(
+            script: cmd.join(' '),
+            returnStatus: true
+        )
+
+        if (exitCode != 0) {
+            echo "Warning: failed to convert scannos raw results to sdpxlite format. Exit code ${exitCode}"
+        }
+
+        uploadArtifact(env.SCANOSS_SPDX_REPORT_FILE_NAME)
+    }
+}
+
+def convertToCSV() {
+    script {
+        def cmd = [
+            'scanoss-py',
+            'convert',
+            '--input',
+            env.SCANOSS_RESULTS_OUTPUT_FILE_NAME,
+            '--format',
+            'csv',
+            '--output',
+            env.SCANOSS_CSV_REPORT_FILE_NAME
+        ]
+
+        // Debug
+        if(params.DEBUG) {
+            cmd << "--debug"
+        }
+
+        // Execute command
+        def exitCode = sh(
+            script: cmd.join(' '),
+            returnStatus: true
+        )
+
+        if (exitCode != 0) {
+            echo "Warning: failed to convert scannos raw results to CSV format. Exit code ${exitCode}"
+        }
+
+        uploadArtifact(env.SCANOSS_CSV_REPORT_FILE_NAME)
     }
 }
 
