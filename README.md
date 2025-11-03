@@ -214,6 +214,17 @@ All scan results are stored as build artifacts and include:
 ## Jenkins Build Artifacts
 Jenkins stores all SCANOSS scan reports in the run artifacts section for easy access and reference.
 
+
+| **Artifact**                    | **Description**                                                                               |
+|---------------------------------|-----------------------------------------------------------------------------------------------|
+| `results.json`                  | Raw scan results from SCANOSS API containing detailed component and snippet match information |
+| `scanoss-copyleft-report.md `   | Copyleft Policy check results report in Markdown format                                       |
+| `scanoss-undeclared-report.md ` | Undeclared Components Policy check results report in Markdown format                          |
+| `cyclonedx.json`                | CycloneDX 1.4 SBOM (Software Bill of Materials)                                               |
+| `scanoss-spdxlite.json`         | SPDXLite 2.2 format SBOM                                                                      |
+| `scanoss-sbom.csv`              | Software Bill of Materials in CSV format                                                      |
+
+
 ![Location of SCANOSS reports in Jenkins build artifacts](./assets/images/scanoss-artifacts.png)
 
 ## JIRA Integration Reports
