@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 ### Added
-- Upcoming changes...
+- Added configurable scan path parameter (`SCAN_PATH`) to allow scanning a specific subdirectory within the repository
 
 ## [1.1.0] - 2025-11-03
 ### Added

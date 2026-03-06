@@ -7,6 +7,7 @@ pipeline {
         string(name: 'SCANOSS_CLI_DOCKER_IMAGE', defaultValue:"ghcr.io/scanoss/scanoss-py-jenkins:v1.40.1", description: 'SCANOSS CLI Docker Image')
         string(name: 'SCANOSS_API_URL', defaultValue:"https://api.osskb.org/scan/direct", description: 'SCANOSS API URL (optional - default: https://api.osskb.org/scan/direct)')
 
+        string(name: 'SCAN_PATH', defaultValue: '.', description: 'Relative path within the repository to scan (e.g., "src" or "packages/api"). Must be relative, no parent directory references (..) allowed.')
 
         booleanParam(name: 'SKIP_SNIPPET', defaultValue: false, description: 'Skip the generation of snippets.')
         booleanParam(name: 'SCANOSS_SETTINGS', defaultValue: true, description: 'Settings file to use for scanning.')
@@ -264,7 +265,7 @@ def scan() {
             cmd << "scanoss-py scan"
 
             // Add target directory
-            cmd << "."
+            cmd << validateScanPath(params.SCAN_PATH)
 
             // Add API URL
             cmd << "--apiurl ${params.SCANOSS_API_URL}"
@@ -458,6 +459,32 @@ def List<String> buildCopyleftArgs() {
         return ['--exclude', params.LICENSES_COPYLEFT_EXCLUDE]
     }
     return []
+}
+
+def validateScanPath(String scanPath) {
+    if (!scanPath || scanPath.trim() == '') {
+        return '.'
+    }
+
+    // Normalize path separators
+    def normalized = scanPath.replace('\\', '/')
+
+    // Reject absolute paths (Unix-style and Windows-style)
+    if (normalized.startsWith('/') || normalized ==~ /^[a-zA-Z]:.*/) {
+        echo "Warning: Absolute scan paths not allowed: ${scanPath}. Using default: ."
+        return '.'
+    }
+
+    // Reject directory traversal attempts
+    if (normalized.contains('..')) {
+        echo "Warning: Invalid scan path detected: ${scanPath}. Using default: ."
+        return '.'
+    }
+
+    // Remove leading './' for consistency
+    def cleaned = normalized.startsWith('./') ? normalized.substring(2) : normalized
+
+    return cleaned ?: '.'
 }
 
 def createJiraTicket(String title, String filePath) {
