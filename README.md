@@ -1,4 +1,4 @@
-
+ 
 # Integrating SCANOSS with Jenkins
 
 The following guide provides a basic setup example on how to integrate SCANOSS with Jenkins.
